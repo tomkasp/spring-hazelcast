@@ -7,6 +7,6 @@ public interface SessionProvider {
 
     public String getSession(Long key);
 
-    public void setSession(String session);
+    public boolean setSession(String session);
 
 }

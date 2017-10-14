@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Tomasz Kasprzycki
@@ -33,7 +34,21 @@ public class HazelcastSessionProvider implements SessionProvider {
     }
 
     @Override
-    public void setSession(String session) {
-        sessionMap.put(sessionKey, session);
+    public boolean setSession(String session) {
+        try {
+            boolean obtainTheLock = sessionMap.tryLock(sessionKey, 5, TimeUnit.SECONDS);
+            try {
+                if (!obtainTheLock) {
+                    return false;
+                }
+                sessionMap.put(sessionKey, session);
+            } finally {
+                sessionMap.unlock(sessionKey);
+            }
+            return true;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }
